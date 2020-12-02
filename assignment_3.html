@@ -1,0 +1,182 @@
+<html>
+<head>
+	<title>Aassignment 2</title>
+	<style>
+		body {
+			margin: 0;
+		}
+		canvas {
+			display: block;
+		}
+		.container .text {
+			margin-bottom: 5px;
+			font-size: 16px;
+			color: whitesmoke;
+			display: block;
+		}
+
+		.container__line {
+			width: 100%;
+		}
+
+		.container {
+			background-color: brown;
+			padding: 15px;
+			margin: 30px;
+		}
+	</style>
+</head>
+<body>
+<div style="position:absolute; width: 250; bottom: 30px">
+	<div class="container">
+		<span class="text">Eye separation: <span id="eyeSeparationText">0.065</span>m</span>
+		<input class="container__line" type="range" min="0.02" max="0.1" value="0.065" step="0.001" id="eyeSeparation">
+	</div>
+</div>
+<script type="module">
+	import { OrbitControls } from "https://unpkg.com/three/examples/jsm/controls/OrbitControls.js";
+	import { AnaglyphEffect } from "https://alexveretrnkin.github.io/AnaglyphEffect.js";
+	import * as THREE from "https://unpkg.com/three/build/three.module.js";
+
+	const C = 1;
+
+	const scene = new THREE.Scene();
+	const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+	const renderer = new THREE.WebGLRenderer();
+	renderer.setSize(window.innerWidth, window.innerHeight);
+	document.body.appendChild(renderer.domElement);
+
+	const controls = new OrbitControls(camera, renderer.domElement);
+
+	const fiFunc = (u) => {
+		return -(u / Math.sqrt(C + 1)) + Math.atan(Math.sqrt(C + 1) * Math.tan(u))
+	}
+
+	const aFunc = (u, v) => {
+		return 2 / (C + 1 - C * Math.sin(v) ** 2 * Math.cos(u) ** 2);
+	}
+
+	const rFunc = (u, v) => {
+		return (aFunc(u, v) / Math.sqrt(C)) * (Math.sqrt((C + 1) * (1 + C * Math.sin(u) * Math.sin(u))) * Math.sin(v));
+	}
+
+	const eps = 0.0000001
+	const sivertSurface = (u, v, vector) => {
+		// (0.5 - u) * eps this need to match condition -Pi / 2 < u < Pi / 2
+		let calculatedU = u * Math.PI - Math.PI / 2 + (0.5 - u) * eps;
+		let calculatedV = v * Math.PI + (0.5 - v) * eps;
+
+		vector.x = rFunc(calculatedU, calculatedV) * Math.cos(fiFunc(calculatedU));
+
+		vector.y = rFunc(calculatedU, calculatedV) * Math.sin(fiFunc(calculatedU));
+
+		vector.z = (Math.log(Math.tan(calculatedV / 2)) + aFunc(calculatedU, calculatedV) * (C + 1) * Math.cos(calculatedV)) / Math.sqrt(C);
+	};
+
+	const geometry = new THREE.ParametricGeometry(sivertSurface, 50, 50);
+
+	const material = new THREE.MeshBasicMaterial({
+		color: new THREE.Color('white'),
+		wireframe: true
+	});
+
+	const mesh = new THREE.Mesh(geometry, material);
+
+	scene.add(mesh);
+
+	const effect = new AnaglyphEffect(renderer, window.innerWidth, window.innerHeight);
+
+	camera.position.z = 5;
+
+	let animate = () => {
+		requestAnimationFrame( animate );
+
+		controls.update();
+
+		effect.render(scene, camera);
+	};
+
+	const getRotationMatrix = ( alpha, beta, gamma ) => {
+		let [x, y, z] = [beta, gamma, alpha].map(el => el ? el * DEGREES_TO_RADIAN : 0)
+
+		let [cX, cY, cZ] = [x, y, z].map(el => Math.cos(el));
+		let [sX, sY, sZ] = [x, y, z].map(el => Math.sin(el));
+
+		// This code was allowed to be used by us
+		// Originally taken from shttps://w3c.github.io/deviceorientation/spec-source-orientation.html
+
+		// Prefix c means cos, s means sin
+		let m11 = cZ * cY - sZ * sX * sY;
+		let m12 = - cX * sZ;
+		let m13 = cY * sZ * sX + cZ * sY;
+
+		let m21 = cY * sZ + cZ * sX * sY;
+		let m22 = cZ * cX;
+		let m23 = sZ * sY - cZ * cY * sX;
+
+		let m31 = - cX * sY;
+		let m32 = sX;
+		let m33 = cX * cY;
+
+		// Original method returned a 3x3 matrix,
+		// but due to THREE.js requirements we needed to convert it toa 4x4 one,
+		// so we added an extra row and a column
+		return [
+			m11,    m12,    m13,    0,
+			m21,    m22,    m23,    0,
+			m31,    m32,    m33,    0,
+			0,      0,      0,      1,
+		];
+	}
+
+	const updateMotionData = (event) => {
+		let {alpha, beta, gamma} = event;
+		let matrix = new THREE.Matrix4();
+		matrix.elements = getRotationMatrix(alpha, beta, gamma)
+		surface.setRotationFromMatrix(matrix);
+	}
+
+	const updateOrientationData = (event) => {
+		console.log("Update orientation")
+		console.log(event)
+	}
+
+	const addMotionEventListeners = () => {
+		window.addEventListener("deviceorientation", updateMotionData, true )
+		window.addEventListener("orientationchange", updateOrientationData, false );
+	}
+
+	const requestMotionPermission = () => {
+		if ( window.DeviceOrientationEvent !== undefined && typeof window.DeviceOrientationEvent.requestPermission === 'function' ) {
+			window.DeviceOrientationEvent.requestPermission().then( ( response ) => {
+				if ( response == 'granted' ) {
+					addMotionEventListeners()
+				}
+			} ).catch( ( error ) => {
+				console.error( 'Unable to get DeviceOrientation API permission', error );
+			} );
+		} else {
+			addMotionEventListeners()
+		}
+	}
+
+	document.getElementById("eyeSeparation").oninput = (event) => {
+		let value = event.target.value;
+		effect.stereo.eyeSep = value;
+		document.getElementById("eyeSeparationText").innerHTML = value;
+	}
+
+
+	setTimeout(() => requestMotionPermission(), 0);
+
+	window.onresize = () => {
+		effect.setSize( window.innerWidth, window.innerHeight );
+		camera.aspect = window.innerWidth / window.innerHeight;
+		camera.updateProjectionMatrix();
+	};
+
+	animate();
+</script>
+</body>
+</html>
