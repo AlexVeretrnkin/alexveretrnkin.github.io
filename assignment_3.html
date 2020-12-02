@@ -140,7 +140,7 @@
 		let {alpha, beta, gamma} = event;
 		let matrix = new THREE.Matrix4();
 		matrix.elements = getRotationMatrix(alpha, beta, gamma)
-		surface.setRotationFromMatrix(matrix);
+		mesh.setRotationFromMatrix(matrix);
 	}
 
 	const updateOrientationData = (event) => {
