@@ -34,7 +34,7 @@
     <span class="text">Eye separation: <span id="eyeSeparationText">0.065</span>m</span>
     <input class="container__line" type="range" min="0.02" max="0.1" value="0.065" step="0.001" id="eyeSeparation">
     <div class="field">
-      <button onclick="requestMotionPermission()">Allow motion access</button>
+      <button id="allow-button">Allow motion access</button>
     </div>
   </div>
 </div>
@@ -153,11 +153,13 @@
         }
     }
 
-    document.getElementById("eyeSeparation").oninput = (event) => {
+    document.getElementById('eyeSeparation').oninput = (event) => {
         let value = event.target.value;
         effect.stereo.eyeSep = value;
         document.getElementById("eyeSeparationText").innerHTML = value;
     }
+
+    document.getElementById('allow-button').onclick = requestMotionPermission;
 
     window.onresize = () => {
         effect.setSize(window.innerWidth, window.innerHeight);
@@ -166,12 +168,6 @@
     };
 
     animate();
-
-    requestMotionPermission();
-
-    window.onclick = requestMotionPermission();
-
-    setTimeout(() => requestMotionPermission(), 0);
 </script>
 </body>
 </html>
