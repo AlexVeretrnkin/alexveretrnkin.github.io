@@ -139,6 +139,8 @@
     }
 
     const requestMotionPermission = async () => {
+        console.log('requestMotionPermission')
+
         if (!!window.DeviceOrientationEvent && !!window.DeviceOrientationEvent.requestPermission) {
             const permission = await window.DeviceOrientationEvent.requestPermission()
 
@@ -161,6 +163,8 @@
     };
 
     animate();
+
+    requestMotionPermission();
 
     setTimeout(() => requestMotionPermission(), 0);
 </script>
