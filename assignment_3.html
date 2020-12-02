@@ -52,7 +52,7 @@
 
     const C = 1;
 
-    const radiansInDegrees = Math.PI / 180
+    const radiansInDegrees = Math.PI / 180;
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -65,15 +65,15 @@
 
     const fiFunc = (u) => {
         return -(u / Math.sqrt(C + 1)) + Math.atan(Math.sqrt(C + 1) * Math.tan(u))
-    }
+    };
 
     const aFunc = (u, v) => {
         return 2 / (C + 1 - C * Math.sin(v) ** 2 * Math.cos(u) ** 2);
-    }
+    };
 
     const rFunc = (u, v) => {
         return (aFunc(u, v) / Math.sqrt(C)) * (Math.sqrt((C + 1) * (1 + C * Math.sin(u) * Math.sin(u))) * Math.sin(v));
-    }
+    };
 
     const eps = 0.0000001
     const sivertSurface = (u, v, vector) => {
@@ -177,7 +177,7 @@
         effect.setSize(window.innerWidth, window.innerHeight);
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-    }
+    };
 
     animate();
 </script>
