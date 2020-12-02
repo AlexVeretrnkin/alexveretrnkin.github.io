@@ -31,6 +31,10 @@
 	<div class="container">
 		<span class="text">Eye separation: <span id="eyeSeparationText">0.065</span>m</span>
 		<input class="container__line" type="range" min="0.02" max="0.1" value="0.065" step="0.001" id="eyeSeparation">
+
+		<div id="motionPermission">
+			<button id="motionPermissionButton">Allow motion access</button>
+		</div>
 	</div>
 </div>
 <script type="module">
@@ -148,6 +152,8 @@
 	}
 
 	const requestMotionPermission = () => {
+		console.log(window.DeviceOrientationEvent);
+
 		if ( window.DeviceOrientationEvent !== undefined && typeof window.DeviceOrientationEvent.requestPermission === 'function' ) {
 			window.DeviceOrientationEvent.requestPermission().then( ( response ) => {
 				if ( response == 'granted' ) {
@@ -168,7 +174,16 @@
 	}
 
 
-	setTimeout(() => requestMotionPermission(), 0);
+	if ( window.DeviceOrientationEvent !== undefined && typeof window.DeviceOrientationEvent.requestPermission === 'function' ) {
+		console.log("Can request permission")
+		document.getElementById("motionPermissionButton")
+				.addEventListener("click", (event) => {
+					requestMotionPermission()
+				}, false);
+	} else {
+		console.log("Cannot request permission or it is granted without one")
+		requestMotionPermission()
+	}
 
 	window.onresize = () => {
 		effect.setSize( window.innerWidth, window.innerHeight );
