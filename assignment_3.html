@@ -1,6 +1,6 @@
 <html>
 <head>
-  <title>Aassignment 2</title>
+  <title>Aassignment 3</title>
   <style>
       body {
           margin: 0;
@@ -25,6 +25,13 @@
           background-color: brown;
           padding: 15px;
           margin: 30px;
+
+          display: flex;
+          flex-direction: column;
+      }
+
+      .m-auto {
+          margin: auto;
       }
   </style>
 </head>
@@ -33,7 +40,7 @@
   <div class="container">
     <span class="text">Eye separation: <span id="eyeSeparationText">0.065</span>m</span>
     <input class="container__line" type="range" min="0.02" max="0.1" value="0.065" step="0.001" id="eyeSeparation">
-    <div class="field">
+    <div class="m-auto">
       <button id="allow-button">Allow motion access</button>
     </div>
   </div>
@@ -128,44 +135,42 @@
             m31, m32, m33, 0,
             0, 0, 0, 1,
         ];
-    }
+    };
 
-    const updateMotionData = (event) => {
+    const updateRotation = (event) => {
         let {alpha, beta, gamma} = event;
         let matrix = new THREE.Matrix4();
-        matrix.elements = getRotationMatrix(alpha, beta, gamma)
+        matrix.elements = getRotationMatrix(alpha, beta, gamma);
         mesh.setRotationFromMatrix(matrix);
-    }
+    };
 
-    const addMotionEventListeners = () => {
-        window.ondeviceorientation = updateMotionData
-    }
+    const setUpMotionListeners = () => {
+        window.ondeviceorientation = updateRotation;
+    };
 
-    const requestMotionPermission = async () => {
-        console.log('requestMotionPermission')
-
+    const getPermission = async () => {
         if (!!window.DeviceOrientationEvent && !!window.DeviceOrientationEvent.requestPermission) {
-            const permission = await window.DeviceOrientationEvent.requestPermission()
+            const permission = await window.DeviceOrientationEvent.requestPermission();
 
-            if (permission === 'granted') addMotionEventListeners()
+            if (permission === 'granted') setUpMotionListeners();
         } else {
-            addMotionEventListeners()
+            setUpMotionListeners();
         }
-    }
+    };
 
     document.getElementById('eyeSeparation').oninput = (event) => {
         let value = event.target.value;
         effect.stereo.eyeSep = value;
         document.getElementById("eyeSeparationText").innerHTML = value;
-    }
+    };
 
-    document.getElementById('allow-button').onclick = requestMotionPermission;
+    document.getElementById('allow-button').onclick = getPermission;
 
     window.onresize = () => {
         effect.setSize(window.innerWidth, window.innerHeight);
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-    };
+    }
 
     animate();
 </script>
