@@ -52,7 +52,7 @@
 
     const C = 1;
 
-    const DEGREES_TO_RADIAN = Math.PI / 180
+    const radiansInDegrees = Math.PI / 180
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -112,29 +112,36 @@
     };
 
     const getRotationMatrix = (alpha, beta, gamma) => {
-        let [x, y, z] = [beta, gamma, alpha].map(el => el ? el * DEGREES_TO_RADIAN : 0)
+        const _x = beta  ? beta  * radiansInDegrees : 0;
+        const _y = gamma ? gamma * radiansInDegrees : 0;
+        const _z = alpha ? alpha * radiansInDegrees : 0;
 
-        let [cX, cY, cZ] = [x, y, z].map(el => Math.cos(el));
-        let [sX, sY, sZ] = [x, y, z].map(el => Math.sin(el));
+        const cX = Math.cos( _x );
+        const cY = Math.cos( _y );
+        const cZ = Math.cos( _z );
+        const sX = Math.sin( _x );
+        const sY = Math.sin( _y );
+        const sZ = Math.sin( _z );
 
-        let m11 = cZ * cY - sZ * sX * sY;
-        let m12 = -cX * sZ;
-        let m13 = cY * sZ * sX + cZ * sY;
+        const m11 = cZ * cY - sZ * sX * sY;
+        const m12 = - cX * sZ;
+        const m13 = cY * sZ * sX + cZ * sY;
 
-        let m21 = cY * sZ + cZ * sX * sY;
-        let m22 = cZ * cX;
-        let m23 = sZ * sY - cZ * cY * sX;
+        const m21 = cY * sZ + cZ * sX * sY;
+        const m22 = cZ * cX;
+        const m23 = sZ * sY - cZ * cY * sX;
 
-        let m31 = -cX * sY;
-        let m32 = sX;
-        let m33 = cX * cY;
+        const m31 = - cX * sY;
+        const m32 = sX;
+        const m33 = cX * cY;
 
         return [
             m11, m12, m13, 0,
             m21, m22, m23, 0,
             m31, m32, m33, 0,
-            0, 0, 0, 1,
+            0,0, 0, 1,
         ];
+
     };
 
     const updateRotation = (event) => {
