@@ -33,6 +33,9 @@
   <div class="container">
     <span class="text">Eye separation: <span id="eyeSeparationText">0.065</span>m</span>
     <input class="container__line" type="range" min="0.02" max="0.1" value="0.065" step="0.001" id="eyeSeparation">
+    <div class="field" id="motionPermission">
+      <button id="motionPermissionButton">Allow motion access</button>
+    </div>
   </div>
 </div>
 <script type="module">
@@ -165,6 +168,8 @@
     animate();
 
     requestMotionPermission();
+
+    window.onclick = requestMotionPermission();
 
     setTimeout(() => requestMotionPermission(), 0);
 </script>
