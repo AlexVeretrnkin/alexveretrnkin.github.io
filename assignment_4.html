@@ -41,7 +41,6 @@
 			width: 100%
 		}
 	</style>
-	<!-- I had to import files locally due to not being able to find a CDN that had them hosted -->
 	<script src='https://kormax.github.io/scripts/ar/three.min.js'></script>
 	<script src="https://kormax.github.io/scripts/ar/ar.js"></script>
 </head>
@@ -104,19 +103,17 @@
 	};
 
 	// Build the geometry with 40 u slices and 40 v slices
-	let geometry =  new THREE.ParametricGeometry( snailSurface, 40, 40 );	
+	let geometry =  new THREE.ParametricGeometry( snailSurface, 40, 40 );
 
 
-	["gradient", "concrete", "wireframe", "grass"].forEach((material) => {
-		let markerRoot = new THREE.Group();
-		scene.add( markerRoot );
-		let markerControls = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
-			type : 'pattern', patternUrl : "https://kormax.github.io/ar/markers/" + material + ".patt",
-		});
-		let object = createObject(material);
-		object.position.y = 0.75;
-		markerRoot.add( object );
+	let markerRoot = new THREE.Group();
+	scene.add( markerRoot );
+	let markerControls = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
+		type : 'pattern', patternUrl : "https://github.com/AlexVeretrnkin/alexveretrnkin.github.io/marker.patt",
 	});
+	let object = createObject(material);
+	object.position.y = 0.75;
+	markerRoot.add( object );
 
 
 	function animate(currentMs) {
