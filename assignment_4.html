@@ -53,16 +53,7 @@
 
 <body style="margin : 0; overflow: hidden; font-family: Monospace,serif;">
 <script>
-
-    // Royalty free images were used
-    const TEXTURE_URLS = {
-        grass: "https://kormax.github.io/images/grass.jpg",
-        concrete: "https://kormax.github.io/images/concrete.jpg",
-        gradient: "https://kormax.github.io/images/texture.png",
-    }
-
-    // Following constants can be modified to change the resulting surface
-    const a = 1, b = 1, c = 1;
+    const C = 1;
 
     const renderer = new THREE.WebGLRenderer({alpha: true});
     document.body.appendChild(renderer.domElement);
@@ -94,32 +85,37 @@
         camera.projectionMatrix.copy(arToolkitContext.getProjectionMatrix());
     });
 
-
-    let snailSurface = (u0, v0, vector) => {
-        // Values u and v provided by the library iml. range from 0 to 1.
-        // For this surface following constraints are needed:
-        // 0 <= u <= 2pi
-        // -pi <= v <= pi
-        // Therefore we need to apply following transformatons to u0 and v0:
-        let u = u0 * Math.PI * 2
-        let v = v0 * Math.PI * 2 - Math.PI
-
-        // Here we mutate the Vector3 object as required by the library iml.
-        // x, z, y values are defined by surface parametric equation mentioned on page 280.
-        vector.x = +a * u * Math.sin(u) * Math.cos(v)
-        vector.y = +b * u * Math.cos(u) * Math.cos(v)
-        vector.z = -c * u * Math.sin(v);
-        vector.multiplyScalar(0.1); // Shrink the surface down
+    const fiFunc = (u) => {
+        return -(u / Math.sqrt(C + 1)) + Math.atan(Math.sqrt(C + 1) * Math.tan(u))
     };
 
-    // Build the geometry with 40 u slices and 40 v slices
-    let geometry = new THREE.ParametricGeometry(snailSurface, 40, 40);
+    const aFunc = (u, v) => {
+        return 2 / (C + 1 - C * Math.sin(v) ** 2 * Math.cos(u) ** 2);
+    };
 
+    const rFunc = (u, v) => {
+        return (aFunc(u, v) / Math.sqrt(C)) * (Math.sqrt((C + 1) * (1 + C * Math.sin(u) * Math.sin(u))) * Math.sin(v));
+    };
+
+    const eps = 0.0000001
+    const sivertSurface = (u, v, vector) => {
+        // (0.5 - u) * eps this need to match condition -Pi / 2 < u < Pi / 2
+        let calculatedU = u * Math.PI - Math.PI / 2 + (0.5 - u) * eps;
+        let calculatedV = v * Math.PI + (0.5 - v) * eps;
+
+        vector.x = rFunc(calculatedU, calculatedV) * Math.cos(fiFunc(calculatedU));
+
+        vector.y = rFunc(calculatedU, calculatedV) * Math.sin(fiFunc(calculatedU));
+
+        vector.z = (Math.log(Math.tan(calculatedV / 2)) + aFunc(calculatedU, calculatedV) * (C + 1) * Math.cos(calculatedV)) / Math.sqrt(C);
+    };
+
+    let geometry = new THREE.ParametricGeometry(sivertSurface, 50, 50);
 
     let markerRoot = new THREE.Group();
     scene.add(markerRoot);
     let markerControls = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
-        type: 'pattern',patternUrl: "https://alexveretrnkin.github.io/marker.patt",
+        type: 'pattern',patternUrl: "https://alexveretrnkin.github.io/apple.patt",
     });
     let object = createObject();
     object.position.y = 0.75;
