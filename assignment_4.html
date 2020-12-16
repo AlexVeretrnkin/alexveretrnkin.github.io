@@ -1,0 +1,177 @@
+<html>
+
+<head>
+	<!-- This is used to fix some scaling bugs -->
+	<!-- Was seen in one of the examples -->
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+	
+	<title>Practical assignment 4</title>
+	<style>
+		body { 
+			margin: 0; 
+		}
+		canvas { 
+			display: block; 
+		}
+		.floating-bar {
+			position:absolute;
+			width: 250
+		}
+		.field .header {
+			margin-bottom: 5;
+			font-size: 13px;
+			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+			color: white;
+			display: inline-block;
+		}
+		.field {
+			background-color: #171d22;
+			border-radius: 5px;
+			padding: 10px;
+			margin: 25px;
+		}
+		.field input {
+			width: 98%;
+		}
+		.field select {
+			width: 100%;
+		}
+
+		.field button {
+			width: 100%
+		}
+	</style>
+	<!-- I had to import files locally due to not being able to find a CDN that had them hosted -->
+	<script src='https://kormax.github.io/scripts/ar/three.min.js'></script>
+	<script src="https://kormax.github.io/scripts/ar/ar.js"></script>
+</head>
+
+<body style='margin : 0; overflow: hidden; font-family: Monospace,serif;'>
+<script>
+
+	// Royalty free images were used
+	const TEXTURE_URLS = {
+		grass: 	  "https://kormax.github.io/images/grass.jpg",
+		concrete: "https://kormax.github.io/images/concrete.jpg",
+		gradient: "https://kormax.github.io/images/texture.png",
+	}
+
+	// Following constants can be modified to change the resulting surface
+	const a = 1, b = 1, c = 1;
+
+	const renderer = new THREE.WebGLRenderer({ alpha: true });
+	document.body.appendChild( renderer.domElement );
+
+
+	const scene = new THREE.Scene();
+	const camera = new THREE.Camera();
+
+	scene.add(camera);
+
+	const arToolkitSource = new THREEx.ArToolkitSource({ 
+		sourceType : 'webcam',
+		displayWidth: window.innerWidth, 
+		displayHeight: window.innerHeight
+	});
+	arToolkitSource.init(() => { resize() })
+
+	
+	const arToolkitContext = new THREEx.ArToolkitContext({
+		cameraParametersUrl:  'https://kormax.github.io/ar/parameters.dat', // The exact same file was hosted on the examples page
+		detectionMode: 'mono',
+		maxDetectionRate: 60,					// 60 times per second
+		canvasWidth: window.innerWidth, 
+		canvasHeight: window.innerHeight
+	})
+	arToolkitContext.init(() => { camera.projectionMatrix.copy( arToolkitContext.getProjectionMatrix() );});
+
+	
+	let snailSurface = (u0, v0, vector) => {
+		// Values u and v provided by the library iml. range from 0 to 1.
+		// For this surface following constraints are needed:
+		// 0 <= u <= 2pi
+		// -pi <= v <= pi
+		// Therefore we need to apply following transformatons to u0 and v0:
+		let u = u0 * Math.PI * 2
+		let v = v0 * Math.PI * 2 - Math.PI
+
+		// Here we mutate the Vector3 object as required by the library iml.
+		// x, z, y values are defined by surface parametric equation mentioned on page 280.
+		vector.x = +a * u * Math.sin(u) * Math.cos(v)
+		vector.y = +b * u * Math.cos(u) * Math.cos(v)
+		vector.z = -c * u * Math.sin(v); 
+		vector.multiplyScalar(0.1); // Shrink the surface down
+	};
+
+	// Build the geometry with 40 u slices and 40 v slices
+	let geometry =  new THREE.ParametricGeometry( snailSurface, 40, 40 );	
+
+
+	["gradient", "concrete", "wireframe", "grass"].forEach((material) => {
+		let markerRoot = new THREE.Group();
+		scene.add( markerRoot );
+		let markerControls = new THREEx.ArMarkerControls(arToolkitContext, markerRoot, {
+			type : 'pattern', patternUrl : "https://kormax.github.io/ar/markers/" + material + ".patt",
+		});
+		let object = createObject(material);
+		object.position.y = 0.75;
+		markerRoot.add( object );
+	});
+
+
+	function animate(currentMs) {
+		requestAnimationFrame( animate );
+		if(arToolkitSource.ready) {
+			arToolkitContext.update( arToolkitSource.domElement );
+		}
+		renderer.render( scene, camera );
+	}
+
+	function resize() { 
+		renderer.setSize( window.innerWidth, window.innerHeight );
+		arToolkitSource.onResizeElement()
+		arToolkitSource.copyElementSizeTo(renderer.domElement)
+		if( arToolkitContext.arController !== null ){
+			arToolkitSource.copyElementSizeTo(arToolkitContext.arController.canvas)
+		}
+	}
+
+	function createObject(materialName) {
+		// Multiply by 1 to try convert it to a number if it is not.
+		if (materialName == "wireframe") {
+			let wireframe = new THREE.WireframeGeometry( geometry );
+			material = new THREE.LineBasicMaterial( { 
+				color: 0x008f11,
+				linewidth: 2,
+				side: THREE.FrontSide,
+				transparent: true, // Transparent
+				opacity: 1,
+				depthTest: true,    // This would pervent issues if more than one object is drawn,
+			} );
+			surface = new THREE.LineSegments( wireframe, material );
+		} else if (materialName != "wireframe") {
+			let texture = new THREE.TextureLoader().load(
+				TEXTURE_URLS[materialName]
+			);
+			material = new THREE.MeshBasicMaterial( { 
+				map: texture,
+				side: THREE.DoubleSide,
+				transparent: true,
+				opacity: 1,
+				depthTest: true,
+			} );
+			surface = new THREE.Mesh( geometry, material );
+		} else {
+			return;
+		}
+		return surface
+	}
+
+	window.addEventListener('resize', () => { resize()});
+
+	resize();
+	animate();
+
+</script>
+</body>
+</html>
